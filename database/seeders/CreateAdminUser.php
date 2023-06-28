@@ -37,8 +37,5 @@ class CreateAdminUser extends Seeder
         }
 
         echo "Done Admin Creation";
-
-
-
     }
 }
