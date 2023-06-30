@@ -5,6 +5,10 @@ use Illuminate\Support\Facades\Route;
 
 use App\Http\Controllers\API\RegisterController;
 use App\Http\Controllers\API\ProductController;
+use App\Http\Controllers\API\MembershipCategoriesController;
+use App\Http\Controllers\API\ChaptersController;
+use App\Http\Controllers\API\ChapterStatesController;
+
 
 /*
 |--------------------------------------------------------------------------
@@ -23,6 +27,21 @@ Route::controller(RegisterController::class)->group(function(){
 });
 
 
+Route::controller(MembershipCategoriesController::class)->group(function(){
+    Route::get('/membership-categories', 'get');
+});
+
+Route::controller(ChaptersController::class)->group(function(){
+    Route::get('/chapters', 'get');
+});
+
+Route::controller(ChapterStatesController::class)->group(function(){
+    Route::get('/chapter-states', 'get');
+});
+
+
+
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });
+
