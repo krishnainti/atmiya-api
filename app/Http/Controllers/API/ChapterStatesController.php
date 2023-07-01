@@ -13,7 +13,7 @@ class ChapterStatesController extends BaseController
     public function get(Request $request): JsonResponse
     {
         try {
-            return $this->sendResponse(ChapterState::all(), "");
+            return $this->sendResponse(ChapterState::with("metroAreas")->get(), "");
         } catch(\Exception $e) {
             return $this->sendError($e, ["internal server error"], 500);
         }

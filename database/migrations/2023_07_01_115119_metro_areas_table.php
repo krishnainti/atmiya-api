@@ -11,13 +11,12 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('chapter_states', function (Blueprint $table) {
+        Schema::create('metro_areas', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('chapter_id');
             $table->string('name');
-            $table->string('short_name');
+            $table->unsignedBigInteger('chapter_state_id');
             $table->timestamps();
-            $table->foreign('chapter_id')->references('id')->on('chapters');
+            $table->foreign('chapter_state_id')->references('id')->on('chapter_states');
         });
     }
 
@@ -26,6 +25,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('chapter_states');
+        Schema::dropIfExists('metro_areas');
     }
 };

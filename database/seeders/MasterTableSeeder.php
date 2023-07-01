@@ -4,6 +4,7 @@ namespace Database\Seeders;
 
 use App\Models\Chapter;
 use App\Models\ChapterState;
+use App\Models\MetroAreas;
 use Illuminate\Database\Seeder;
 use App\Models\MembershipCategory;
 
@@ -13,10 +14,12 @@ class MasterTableSeeder extends Seeder
     public function run(): void
     {
         //membership..
-        $membership_data = [[1, "Community Member", "Community Member with free membership", "0"],
+        $membership_data = [
+            [1, "Community Member", "Community Member with free membership", "0"],
             [2, "Donor Member", "Donor membership with $50 application fee", "50"],
             [3, "Power Donor Member", "Power Donor membership with $500 application fee", "500"],
-            [4, "Mega Donor Member", "Mega Donor membership with $5000 application fee", "5000"]];
+            [4, "Mega Donor Member", "Mega Donor membership with $5000 application fee", "5000"]
+        ];
 
         foreach ($membership_data as $member_ship) {
             MembershipCategory::updateOrCreate([
@@ -70,10 +73,10 @@ class MasterTableSeeder extends Seeder
             [4, "FL", "Florida"],
             [4, "TN", "Tennessee"],
             [4, "KY", "Kentucky"],
-            [5, "TX", "Texas", "North/DFW"],
+            [5, "TX", "Texas", ["North","DFW"]],
             [5, "OK", "Oklahama"],
             [5, "AR", "Arkansas"],
-            [6, "TX", "Texas", "South/Houston/Austin/San Auntonio"],
+            [6, "TX", "Texas", ["South","Houston","Austin","San Auntonio"]],
             [6, "LA", "Louisiana"],
             [7, "ND", "North Dakota"],
             [7, "SD", "South Dakota"],
@@ -90,11 +93,11 @@ class MasterTableSeeder extends Seeder
             [8, "AK", "Alaska"],
             [8, "WA", "Washington"],
             [8, "OR", "Oregon"],
-            [8, "CA", "California", "Bay Area"],
+            [8, "CA", "California", ["Bay Area"]],
             [8, "MO", "Montana"],
             [8, "WY", "Wyoming"],
             [8, "ID", "Idaho"],
-            [9, "CA", "California", "SoCal"],
+            [9, "CA", "California", ["SoCal"]],
             [9, "NV", "Nevada"],
             [9, "AZ", "Arizona"],
             [9, "NM", "New Mexico"],
@@ -103,12 +106,21 @@ class MasterTableSeeder extends Seeder
         ];
 
         foreach ($states as $state) {
-            ChapterState::updateOrCreate([
+            $stateRow = ChapterState::updateOrCreate([
                 'chapter_id' => $state[0],
                 'name' => $state[2],
                 'short_name' => $state[1],
-                'metro_area' => array_key_exists(3,$state)?$state[3]:null,
             ]);
+
+            $areaNames = array_key_exists(3,$state) ? $state[3] : [];
+
+            foreach ($areaNames as $areaName) {
+                MetroAreas::updateOrCreate([
+                    "name" => $areaName,
+                    "chapter_state_id" => $stateRow["id"]
+                ]);
+            }
+
         }
 
     }

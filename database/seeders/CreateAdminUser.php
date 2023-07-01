@@ -24,7 +24,7 @@ class CreateAdminUser extends Seeder
         $userPermission = Permission::create(['name' => 'user']);
         $userRole->givePermissionTo($userPermission);
 
-        $adminUser = User::where("email", env("ADMIN_EMAIL"))->first();
+        $adminUser = User::where('email', env("ADMIN_EMAIL"))->first();
 
         if (!$adminUser) {
             $adminUser = User::create([
