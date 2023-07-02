@@ -26,6 +26,10 @@ Route::controller(RegisterController::class)->group(function(){
     Route::post('login', 'login');
 });
 
+Route::middleware('auth:sanctum')->controller(RegisterController::class)->group(function(){
+    Route::get('profile', 'get');
+    Route::patch('profile', 'update');
+});
 
 Route::controller(MembershipCategoriesController::class)->group(function(){
     Route::get('/membership-categories', 'get');

@@ -126,4 +126,57 @@ class RegisterController extends BaseController
             return $this->sendError('Unauthorised.', ['error' => 'Unauthorised']);
         }
     }
+
+
+      /**
+     * get api
+     *
+     * @return \Illuminate\Http\Response
+     */
+    public function get(Request $request): JsonResponse
+    {
+        $user = $request->user();
+
+        $data['user'] = $user;
+        $data['profile'] = $user->profile;
+        $data['roles'] = $user->roles;
+
+        return $this->sendResponse($data, 'User details.');
+       
+    }
+
+        /**
+     * update api
+     *
+     * @return \Illuminate\Http\Response
+     */
+    public function update(RegisterRequest $request): JsonResponse
+    {
+        $user = $request->user();
+
+        $validated_input = $request->validated();
+
+        if($validated_input['id'] != $user->id) {
+            return $this->sendError('Unauthorized request.', ['error' => 'Unauthorized']);
+        }
+
+         // save data user table
+         DB::beginTransaction();
+         if(array_key_exists('password', $validated_input)) {
+             $validated_input['password'] = bcrypt($validated_input['password']);
+         }
+         $validated_input['name'] = $validated_input['first_name'] . " " . $validated_input['last_name'];
+         User::find($user->id)->update($validated_input);
+         
+         Profile::find($user->profile->id)->update($validated_input);
+         DB::commit();
+         
+         //fetch latest data..
+         $user = User::find($user->id);
+         $data['user'] = $user;
+         $data['profile'] = $user->profile;
+         $data['roles'] = $user->roles;
+
+         return $this->sendResponse($data, 'User updated successfully.');
+    }
 }
