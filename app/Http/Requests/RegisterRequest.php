@@ -8,6 +8,8 @@ use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Http\Exceptions\HttpResponseException;
 
+use App\Rules\SpouseDetailsRule;
+
 class RegisterRequest extends FormRequest
 {
 
@@ -34,8 +36,8 @@ class RegisterRequest extends FormRequest
              'reference_phone' => 'bail|required|regex:/^\(?(\d{3})\)?[- ]?(\d{3})[- ]?(\d{4})$/|string',
              'first_name' => 'bail|required|string|max:50',
              'last_name' => 'bail|required|string|max:50',
-             'email' => 'bail|email|max:100|unique:users,email',
-             'phone' => 'bail|nullable|regex:/^\(?(\d{3})\)?[- ]?(\d{3})[- ]?(\d{4})$/|unique:profiles,phone',
+             'email' => 'bail|required|email|max:100|unique:users,email',
+             'phone' => 'bail|required|regex:/^\(?(\d{3})\)?[- ]?(\d{3})[- ]?(\d{4})$/|unique:profiles,phone',
              'marital_status' => 'bail|required|in:single,married',
              'gender' => 'bail|required|in:male,female',
 
@@ -43,10 +45,10 @@ class RegisterRequest extends FormRequest
              'confirm_password' => 'required|same:password',
 
              //spouse details
-             'spouse_first_name' => 'bail|string|max:50|nullable',
-             'spouse_last_name' => 'bail|string|max:50|nullable',
-             'spouse_email' => 'bail|email|string|max:50|nullable',
-             'spouse_phone' => 'bail|string|regex:/^\(?(\d{3})\)?[- ]?(\d{3})[- ]?(\d{4})$/|max:50|nullable',
+             'spouse_first_name' => [new SpouseDetailsRule],
+             'spouse_last_name' => [new SpouseDetailsRule],
+             'spouse_email' => [new SpouseDetailsRule],
+             'spouse_phone' => [new SpouseDetailsRule],
              'family_members' => 'bail|array|nullable',
 
              //Address
@@ -59,7 +61,7 @@ class RegisterRequest extends FormRequest
              'country' => 'bail|required|string|max:25',
 
              //Membership Category
-             'membership_category' => 'bail|required|integer|min:1|exists:membership_categories,id',
+             'membership_category' => 'bail|required|integer|exists:membership_categories,id',
 
              'payment_mode' => 'bail|required|string|max:25',
         ];

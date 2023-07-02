@@ -24,7 +24,7 @@ class RegisterController extends BaseController
     {
         try {
             $validated_input = $request->validated();
-        
+
             // save data user table
             DB::beginTransaction();
             $validated_input['password'] = bcrypt($validated_input['password']);
@@ -32,27 +32,27 @@ class RegisterController extends BaseController
             $user = User::create($validated_input);
             // update the role to user
             $user->assignRole('user');
-            
+
             $validated_input['user_id'] = $user->id;
             $validated_input['status'] = 'pending';
 
             // save data in profiles table
             $profile = Profile::create($validated_input);
-            
+
             DB::commit();
             // save data in payments if on paypal or cards else send email to user for zelle payment
-    
+
            $data['user'] = $user;
            $data['profile'] = $profile;
            $data['roles'] = $user->roles;
-    
+
             return $this->sendResponse($data, 'User register successfully.');
 
         } catch(\Exception $e) {
             DB::rollBack();
             return $this->sendError($e, ["internal server error"], 500);
         }
-      
+
     }
 
     /**
