@@ -4,8 +4,8 @@ namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\API\BaseController as BaseController;
 use App\Http\Requests\RegisterRequest;
-use App\Models\Profile;
 use App\Models\Payment;
+use App\Models\Profile;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -38,25 +38,22 @@ class RegisterController extends BaseController
             // save data in profiles table
             $profile = Profile::create($validated_input);
 
-            if ($validated_input['payment_mode'] == 'Zelle') {
-                $validated_input['status'] = 'pending';
-            }
-
-            
             // save data in payments if on paypal or cards else send email to user for zelle payment
             $membership_category = $profile->membership_category_details;
 
             if ($membership_category->fee == 0) {
                 $payment_attributes = [
                     'payment_for' => 'registration',
-                    'payment_mode' => $validated_input['payment_mode'],
+                    'payment_mode' => strtolower($validated_input['payment_mode']),
                     'amount' => 0,
                     'status' => 'completed',
                     'payment_done_by' => $user->id,
                 ];
                 Payment::create($payment_attributes);
-            }else {
-                if(strtolower($validated_input['payment_mode']) =='paypal' || strtolower($validated_input['payment_mode']) =='card' ) {
+                $profile->status = 'under_review';
+                $profile->save();
+            } else {
+                if (strtolower($validated_input['payment_mode']) == 'paypal' || strtolower($validated_input['payment_mode']) == 'card') {
                     $payment_attributes = [
                         'payment_for' => 'registration',
                         'payment_mode' => 'paypal',
@@ -66,7 +63,10 @@ class RegisterController extends BaseController
                     ];
                     Payment::create($payment_attributes);
 
-                } else if(strtolower($validated_input['payment_mode']) =='zelle') {
+                    $profile->status = 'pending';
+                    $profile->save();
+
+                } else if (strtolower($validated_input['payment_mode']) == 'zelle') {
                     $payment_attributes = [
                         'payment_for' => 'registration',
                         'payment_mode' => 'zelle',
@@ -75,6 +75,8 @@ class RegisterController extends BaseController
                         'payment_done_by' => $user->id,
                     ];
                     Payment::create($payment_attributes);
+                    $profile->status = 'pending';
+                    $profile->save();
                 }
             }
 
@@ -87,7 +89,6 @@ class RegisterController extends BaseController
             return $this->sendResponse($data, 'User register successfully.');
 
         } catch (\Exception $e) {
-            dd($e);
             DB::rollBack();
             return $this->sendError($e, ["internal server error"], 500);
         }
@@ -104,15 +105,15 @@ class RegisterController extends BaseController
         if (Auth::attempt(['email' => $request->email, 'password' => $request->password])) {
             $user = Auth::user();
 
-            if($user->hasRole('admin')) {
+            if ($user->hasRole('admin')) {
                 $success['token'] = $user->createToken('atmiya')->plainTextToken;
                 $success['name'] = $user->name;
                 $success['profile'] = $user->profile;
                 $success['roles'] = $user->roles;
                 return $this->sendResponse($success, 'User login successfully.');
-            }else{
+            } else {
                 $profile = $user->profile;
-                if($profile->status =='admin_approved') {
+                if ($profile->status == 'admin_approved') {
                     $success['token'] = $user->createToken('atmiya')->plainTextToken;
                     $success['name'] = $user->name;
                     $success['profile'] = $user->profile;
