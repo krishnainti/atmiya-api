@@ -33,10 +33,10 @@ return new class extends Migration
 
             $table->unsignedBigInteger('membership_category');
 
-            $table->string('spouse_first_name');
-            $table->string('spouse_last_name');
-            $table->string('spouse_email');
-            $table->string('spouse_phone');
+            $table->string('spouse_first_name')->nullable();
+            $table->string('spouse_last_name')->nullable();
+            $table->string('spouse_email')->nullable();
+            $table->string('spouse_phone')->nullable();
             $table->json('family_members')->nullable();
 
             $table->string('payment_mode');

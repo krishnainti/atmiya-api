@@ -41,12 +41,12 @@ class RegisterRequest extends FormRequest
 
              'password' => 'required|string|min:6|max:50',
              'confirm_password' => 'required|same:password',
-             
+
              //spouse details
-             'spouse_first_name' => 'bail|required|string|max:50',
-             'spouse_last_name' => 'bail|required|string|max:50',
-             'spouse_email' => 'bail|required|email|string|max:50',
-             'spouse_phone' => 'bail|required|string|nullable|regex:/^\(?(\d{3})\)?[- ]?(\d{3})[- ]?(\d{4})$/|max:50',
+             'spouse_first_name' => 'bail|string|max:50|nullable',
+             'spouse_last_name' => 'bail|string|max:50|nullable',
+             'spouse_email' => 'bail|email|string|max:50|nullable',
+             'spouse_phone' => 'bail|string|regex:/^\(?(\d{3})\)?[- ]?(\d{3})[- ]?(\d{4})$/|max:50|nullable',
              'family_members' => 'bail|array|nullable',
 
              //Address
@@ -57,10 +57,10 @@ class RegisterRequest extends FormRequest
              'metro_area' => 'bail|sometimes|nullable|integer|min:1|exists:metro_areas,id',
              'zip_code' => 'bail|required|string|max:25',
              'country' => 'bail|required|string|max:25',
-             
+
              //Membership Category
              'membership_category' => 'bail|required|integer|min:1|exists:membership_categories,id',
-             
+
              'payment_mode' => 'bail|required|string|max:25',
         ];
     }
