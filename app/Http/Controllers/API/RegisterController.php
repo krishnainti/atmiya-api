@@ -44,6 +44,7 @@ class RegisterController extends BaseController
     
            $data['user'] = $user;
            $data['profile'] = $profile;
+           $data['roles'] = $user->roles;
     
             return $this->sendResponse($data, 'User register successfully.');
 
@@ -67,34 +68,12 @@ class RegisterController extends BaseController
             $success['token'] =  $user->createToken('atmiya')->plainTextToken;
             $success['name'] =  $user->name;
             $success['profile'] =  $user->profile;
+            $success['roles'] =  $user->roles;
 
             return $this->sendResponse($success, 'User login successfully.');
         }
         else{
             return $this->sendError('Unauthorised.', ['error'=>'Unauthorised']);
-        }
-    }
-
-     /**
-     * get api
-     *
-     * @return \Illuminate\Http\Response
-     */
-    public function get(Request $request): JsonResponse
-    {
-        $id = (int) $request->input('id', '');
-        Log::debug($id);
-        $user = User::find($id);
-
-        if(!empty($user)) {
-            $data['user'] = $user;
-            $data['profile'] = $user->profile;
-
-
-            return $this->sendResponse($data, '');
-
-        }else{
-            return $this->sendError('No user found.', ['error'=>'No user found']);
         }
     }
 }
