@@ -26,4 +26,9 @@ class Profile extends Model
         'family_members' => 'array',
     ];
 
+    public function membership_category_details()
+    {
+        return $this->hasOne(MembershipCategory::class,'id','membership_category');
+    }
+
 }

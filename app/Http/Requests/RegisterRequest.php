@@ -60,8 +60,8 @@ class RegisterRequest extends FormRequest
 
              //Membership Category
              'membership_category' => 'bail|required|integer|min:1|exists:membership_categories,id',
-
-             'payment_mode' => 'bail|required|string|max:25',
+             
+             'payment_mode' => 'bail|required|in:paypal,zelle,card|max:25',
         ];
     }
 
