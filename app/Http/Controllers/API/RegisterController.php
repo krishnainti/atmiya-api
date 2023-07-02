@@ -8,6 +8,7 @@ use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 use Validator;
 use Illuminate\Http\JsonResponse;
+use App\Http\Requests\RegisterRequest;
 
 class RegisterController extends BaseController
 {
@@ -16,19 +17,17 @@ class RegisterController extends BaseController
      *
      * @return \Illuminate\Http\Response
      */
-    public function register(Request $request): JsonResponse
+    public function register(RegisterRequest $request): JsonResponse
     {
 
-        $validator = Validator::make($request->all(), [
-            'name' => 'required',
-            'email' => 'required|email',
-            'password' => 'required',
-            'c_password' => 'required|same:password',
-        ]);
+        $validated = $request->validated();
 
-        if($validator->fails()){
-            return $this->sendError('Validation Error.', $validator->errors());
-        }
+        dd($validated);
+
+        // save data user table
+        // save data in profiles table
+        // update the role to user
+        // save data in payments if on paypal or cards else send email to user for zelle payment
 
         $input = $request->all();
         $input['password'] = bcrypt($input['password']);
