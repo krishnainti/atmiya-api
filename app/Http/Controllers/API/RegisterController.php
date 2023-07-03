@@ -50,10 +50,11 @@ class RegisterController extends BaseController
                     'payment_done_by' => $user->id,
                 ];
                 Payment::create($payment_attributes);
-                $profile->status = 'under_review';
+                $profile->status = 'pending';
                 $profile->save();
             } else {
-                if (strtolower($validated_input['payment_mode']) == 'paypal' || strtolower($validated_input['payment_mode']) == 'card') {
+
+                if (in_array(strtolower($validated_input['payment_mode']), ['paypal','card'])) {
                     $payment_attributes = [
                         'payment_for' => 'registration',
                         'payment_mode' => 'paypal',
@@ -142,7 +143,7 @@ class RegisterController extends BaseController
         $data['roles'] = $user->roles;
 
         return $this->sendResponse($data, 'User details.');
-       
+
     }
 
         /**
@@ -167,10 +168,10 @@ class RegisterController extends BaseController
          }
          $validated_input['name'] = $validated_input['first_name'] . " " . $validated_input['last_name'];
          User::find($user->id)->update($validated_input);
-         
+
          Profile::find($user->profile->id)->update($validated_input);
          DB::commit();
-         
+
          //fetch latest data..
          $user = User::find($user->id);
          $data['user'] = $user;
@@ -179,4 +180,29 @@ class RegisterController extends BaseController
 
          return $this->sendResponse($data, 'User updated successfully.');
     }
+
+    public function submitProfile(Request $request): JsonResponse
+    {
+
+        $user = User::find($request->user_id);
+
+        if ($user->profile) {
+            $user->profile->status = 'under_review';
+            $user->profile->save();
+        } else {
+            return $this->sendError('Profile.', ['error' => 'Unauthorized']);
+        }
+
+
+        $data['user'] = $user;
+        $data['profile'] = $user->profile;
+        $data['roles'] = $user->roles;
+
+        return $this->sendResponse($data, 'User updated successfully.');
+
+    }
+
+
+
 }
+

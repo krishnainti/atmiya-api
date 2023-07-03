@@ -24,6 +24,7 @@ use App\Http\Controllers\API\ChapterStatesController;
 Route::controller(RegisterController::class)->group(function(){
     Route::post('register', 'register');
     Route::post('login', 'login');
+    Route::post('submit-profile', 'submitProfile');
 });
 
 Route::middleware('auth:sanctum')->controller(RegisterController::class)->group(function(){
