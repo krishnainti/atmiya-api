@@ -2,13 +2,14 @@
 
 namespace App\Http\Requests;
 
-use Illuminate\Support\Facades\Log;
-
-use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Contracts\Validation\Validator;
-use Illuminate\Http\Exceptions\HttpResponseException;
+use Illuminate\Http\Request;
 
 use App\Rules\SpouseDetailsRule;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Foundation\Http\FormRequest;
+
+use Illuminate\Contracts\Validation\Validator;
+use Illuminate\Http\Exceptions\HttpResponseException;
 
 class RegisterRequest extends FormRequest
 {
@@ -29,20 +30,16 @@ class RegisterRequest extends FormRequest
      */
     public function rules(): array
     {
-        Log::info('New registration request: '.json_encode($this->all()));
-        return [
+
+        $rules =  [
              //Personal Details
              'reference_by' => 'bail|required|string|max:50',
              'reference_phone' => 'bail|required|regex:/^\(?(\d{3})\)?[- ]?(\d{3})[- ]?(\d{4})$/|string',
              'first_name' => 'bail|required|string|max:50',
              'last_name' => 'bail|required|string|max:50',
-             'email' => 'bail|required|email|max:100|unique:users,email',
-             'phone' => 'bail|required|regex:/^\(?(\d{3})\)?[- ]?(\d{3})[- ]?(\d{4})$/|unique:profiles,phone',
+             
              'marital_status' => 'bail|required|in:single,married',
              'gender' => 'bail|required|in:male,female',
-
-             'password' => 'required|string|min:6|max:50',
-             'confirm_password' => 'required|same:password',
 
              //spouse details
              'spouse_first_name' => [new SpouseDetailsRule],
@@ -60,11 +57,33 @@ class RegisterRequest extends FormRequest
              'zip_code' => 'bail|required|string|max:25',
              'country' => 'bail|required|string|max:25',
 
-             //Membership Category
-             'membership_category' => 'bail|required|integer|exists:membership_categories,id',
-
-             'payment_mode' => 'bail|required|string|max:25',
         ];
+
+        if(Request::isMethod('patch')) {
+
+            Log::info('profile update: '.json_encode($this->all()));
+
+            $rules['id'] = 'bail|required|min:1|exists:users,id';
+            $rules['email'] = 'bail|required|email|max:100|unique:users,email,'.$this->get('id');
+            $rules['phone'] = 'bail|required|regex:/^\(?(\d{3})\)?[- ]?(\d{3})[- ]?(\d{4})$/|unique:profiles,phone,'.$this->get('profile_id');
+
+            if(!empty($this->get('password'))) {
+                $rules['password'] = 'required|string|min:6|max:50';
+                $rules['confirm_password'] = 'required|same:password';
+            }
+
+        }else {
+            Log::info('New registration request: '.json_encode($this->all()));
+            $rules['email'] = 'bail|required|email|max:100|unique:users,email';
+            $rules['phone'] = 'bail|required|regex:/^\(?(\d{3})\)?[- ]?(\d{3})[- ]?(\d{4})$/|unique:profiles,phone';
+            $rules['payment_mode'] = 'bail|required|in:paypal,zelle,card|max:25';
+            $rules['membership_category'] = 'bail|required|integer|exists:membership_categories,id';
+            
+            $rules['password'] = 'required|string|min:6|max:50';
+            $rules['confirm_password'] = 'required|same:password';
+        }
+
+        return $rules;
     }
 
 }
