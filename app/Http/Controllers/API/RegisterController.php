@@ -11,6 +11,8 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use App\Src\Registration\Writer as RegistrationWriter;
+use App\Src\Registration\Reader as RegistrationReader;
 
 class RegisterController extends BaseController
 {
@@ -23,69 +25,27 @@ class RegisterController extends BaseController
     {
         try {
             $validated_input = $request->validated();
+            $registrationReader = new RegistrationReader();
 
-            // save data user table
+            $registrationWriter = new RegistrationWriter($validated_input);
+            $paymentDetails = null;
+
             DB::beginTransaction();
-            $validated_input['password'] = bcrypt($validated_input['password']);
-            $validated_input['name'] = $validated_input['first_name'] . " " . $validated_input['last_name'];
-            $user = User::create($validated_input);
-            // update the role to user
-            $user->assignRole('user');
-
-            $validated_input['user_id'] = $user->id;
-            $validated_input['status'] = 'pending';
-
-            // save data in profiles table
-            $profile = Profile::create($validated_input);
-
-            // save data in payments if on paypal or cards else send email to user for zelle payment
-            $membership_category = $profile->membership_category_details;
-
-            if ($membership_category->fee == 0) {
-                $payment_attributes = [
-                    'payment_for' => 'registration',
-                    'payment_mode' => strtolower($validated_input['payment_mode']),
-                    'amount' => 0,
-                    'status' => 'completed',
-                    'payment_done_by' => $user->id,
-                ];
-                Payment::create($payment_attributes);
-                $profile->status = 'pending';
-                $profile->save();
+            if (isset($validated_input['id'])) {
+                $registrationWriter->setUserId($validated_input['id']);
+                $registrationWriter->updateUser();
+                $registrationWriter->updateProfile();
+                $paymentDetails = $registrationWriter->updatePayment();
             } else {
-
-                if (in_array(strtolower($validated_input['payment_mode']), ['paypal','card'])) {
-                    $payment_attributes = [
-                        'payment_for' => 'registration',
-                        'payment_mode' => 'paypal',
-                        'amount' => $membership_category->fee,
-                        'status' => 'pending',
-                        'payment_done_by' => $user->id,
-                    ];
-                    Payment::create($payment_attributes);
-
-                    $profile->status = 'pending';
-                    $profile->save();
-
-                } else if (strtolower($validated_input['payment_mode']) == 'zelle') {
-                    $payment_attributes = [
-                        'payment_for' => 'registration',
-                        'payment_mode' => 'zelle',
-                        'amount' => $membership_category->fee,
-                        'status' => 'pending',
-                        'payment_done_by' => $user->id,
-                    ];
-                    Payment::create($payment_attributes);
-                    $profile->status = 'pending';
-                    $profile->save();
-                }
+                $registrationWriter->createUser();
+                $registrationWriter->createProfile();
+                $paymentDetails = $registrationWriter->createPayment();
             }
 
             DB::commit();
 
-            $data['user'] = $user;
-            $data['profile'] = $profile;
-            $data['roles'] = $user->roles;
+            $data['user'] = $registrationReader->getUser($registrationWriter->user->id);
+            $data['paymentDetails'] = $paymentDetails;
 
             return $this->sendResponse($data, 'User register successfully.');
 
@@ -108,21 +68,20 @@ class RegisterController extends BaseController
 
             if ($user->hasRole('admin')) {
                 $success['token'] = $user->createToken('atmiya')->plainTextToken;
-                $success['name'] = $user->name;
-                $success['profile'] = $user->profile;
-                $success['roles'] = $user->roles;
+                $success['user'] = $user;
+
                 return $this->sendResponse($success, 'User login successfully.');
             } else {
                 $profile = $user->profile;
                 if ($profile->status == 'admin_approved') {
                     $success['token'] = $user->createToken('atmiya')->plainTextToken;
-                    $success['name'] = $user->name;
-                    $success['profile'] = $user->profile;
-                    $success['roles'] = $user->roles;
+                    $success['user'] = $user->name;
                     return $this->sendResponse($success, 'User login successfully.');
                 }
             }
+
             return $this->sendError('Unauthorised.', ['error' => 'Unauthorised']);
+
         } else {
             return $this->sendError('Unauthorised.', ['error' => 'Unauthorised']);
         }
@@ -136,11 +95,8 @@ class RegisterController extends BaseController
      */
     public function get(Request $request): JsonResponse
     {
-        $user = $request->user();
-
-        $data['user'] = $user;
-        $data['profile'] = $user->profile;
-        $data['roles'] = $user->roles;
+        $registrationReader = new RegistrationReader();
+        $data['user'] = $registrationReader->getUser($request->user()->id);
 
         return $this->sendResponse($data, 'User details.');
 
@@ -172,13 +128,10 @@ class RegisterController extends BaseController
          Profile::find($user->profile->id)->update($validated_input);
          DB::commit();
 
-         //fetch latest data..
-         $user = User::find($user->id);
-         $data['user'] = $user;
-         $data['profile'] = $user->profile;
-         $data['roles'] = $user->roles;
+        $registrationReader = new RegistrationReader();
+        $data['user'] = $registrationReader->getUser($user->id);
 
-         return $this->sendResponse($data, 'User updated successfully.');
+        return $this->sendResponse($data, 'User updated successfully.');
     }
 
     public function submitProfile(Request $request): JsonResponse
@@ -193,13 +146,10 @@ class RegisterController extends BaseController
             return $this->sendError('Profile.', ['error' => 'Unauthorized']);
         }
 
-
-        $data['user'] = $user;
-        $data['profile'] = $user->profile;
-        $data['roles'] = $user->roles;
+        $registrationReader = new RegistrationReader();
+        $data['user'] = $registrationReader->getUser($user->id);
 
         return $this->sendResponse($data, 'User updated successfully.');
-
     }
 
 

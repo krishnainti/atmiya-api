@@ -4,6 +4,8 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
+
 
 class Profile extends Model
 {
@@ -26,9 +28,14 @@ class Profile extends Model
         'family_members' => 'array',
     ];
 
-    public function membership_category_details()
+    public function membershipCategory()
     {
         return $this->hasOne(MembershipCategory::class,'id','membership_category');
+    }
+
+    public function payments(): MorphMany
+    {
+        return $this->morphMany(Payment::class, 'for');
     }
 
 }

@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use App\Rules\SpouseDetailsRule;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Http\Exceptions\HttpResponseException;
@@ -59,7 +60,7 @@ class RegisterRequest extends FormRequest
 
         ];
 
-        if(Request::isMethod('patch')) {
+        if (Request::isMethod('patch')) {
 
             Log::info('profile update: '.json_encode($this->all()));
 
@@ -67,14 +68,24 @@ class RegisterRequest extends FormRequest
             $rules['email'] = 'bail|required|email|max:100|unique:users,email,'.$this->get('id');
             $rules['phone'] = 'bail|required|regex:/^\(?(\d{3})\)?[- ]?(\d{3})[- ]?(\d{4})$/';
 
-            if(!empty($this->get('password'))) {
+            if (!empty($this->get('password'))) {
                 $rules['password'] = 'required|string|min:6|max:50';
                 $rules['confirm_password'] = 'required|same:password';
             }
 
-        }else {
-            Log::info('New registration request: '.json_encode($this->all()));
-            $rules['email'] = 'bail|required|email|max:100|unique:users,email';
+        } else {
+
+            $rules['id'] = "nullable";
+
+            if ($this->id) {
+                Log::info('Update Exiting user registration request: '.json_encode($this->all()));
+                $rules['email'] = ['required', 'email', Rule::unique('users')->ignore($this->id)];
+            } else {
+                Log::info('New registration request: '.json_encode($this->all()));
+                $rules['email'] = 'bail|required|email|max:100|unique:users,email';
+            }
+
+
             $rules['phone'] = 'bail|required|regex:/^\(?(\d{3})\)?[- ]?(\d{3})[- ]?(\d{4})$/';
             $rules['payment_mode'] = 'bail|required|in:paypal,zelle,card|max:25';
             $rules['membership_category'] = 'bail|required|integer|exists:membership_categories,id';
