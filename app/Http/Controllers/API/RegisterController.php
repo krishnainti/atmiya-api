@@ -71,19 +71,18 @@ class RegisterController extends BaseController
                 $success['user'] = $user;
 
                 return $this->sendResponse($success, 'User login successfully.');
-            } else {
-                $profile = $user->profile;
-                if ($profile->status == 'admin_approved') {
-                    $success['token'] = $user->createToken('atmiya')->plainTextToken;
-                    $success['user'] = $user->name;
-                    return $this->sendResponse($success, 'User login successfully.');
-                }
             }
 
-            return $this->sendError('Unauthorised.', ['error' => 'Unauthorised']);
+            $profile = $user->profile;
+            if ($profile->status == 'admin_approved') {
+                $success['token'] = $user->createToken('atmiya')->plainTextToken;
+                $success['user'] = $user->name;
+                return $this->sendResponse($success, 'User login successfully.');
+            }
 
+            return $this->sendError(["message" => 'Unauthorised.', "mode" => "profile_under_review"], ['error' => 'Unauthorised'], 500);
         } else {
-            return $this->sendError('Unauthorised.', ['error' => 'Unauthorised']);
+            return $this->sendError(["message" => 'Unauthorised.', "mode" => "user_not_found"], ['error' => 'Unauthorised'], 500);
         }
     }
 
@@ -151,6 +150,36 @@ class RegisterController extends BaseController
 
         return $this->sendResponse($data, 'User updated successfully.');
     }
+
+    public function findProfileByEmail(Request $request): JsonResponse {
+
+        if (!isset($request->email)) {
+            return $this->sendError('Please provide the email', ['error' => 'Please provide the email'], 422);
+        }
+
+        $registrationReader = new RegistrationReader();
+
+        $userFound = $registrationReader->findPendingUserByEmail($request->email);
+
+        if ($userFound) {
+            $data['user'] = $registrationReader->getUser($userFound->id);
+            return $this->sendResponse($data, 'User found successfully.');
+        }
+
+        return $this->sendResponse("", 'User not found.');
+
+    }
+
+    function getReviewProfiles(Request $request) {
+
+        $registrationReader = new RegistrationReader();
+
+        $data['users'] = $registrationReader->getUnderReviewProfiles();
+
+        return $this->sendResponse($data, 'Users data.');
+
+    }
+
 
 
 

@@ -8,6 +8,7 @@ use App\Http\Controllers\API\ProductController;
 use App\Http\Controllers\API\MembershipCategoriesController;
 use App\Http\Controllers\API\ChaptersController;
 use App\Http\Controllers\API\ChapterStatesController;
+use App\Http\Middleware\IsAdmin;
 
 
 /*
@@ -25,11 +26,13 @@ Route::controller(RegisterController::class)->group(function(){
     Route::post('register', 'register');
     Route::post('login', 'login');
     Route::post('submit-profile', 'submitProfile');
+    Route::get('find-profile-by-email', 'findProfileByEmail');
 });
 
 Route::middleware('auth:sanctum')->controller(RegisterController::class)->group(function(){
     Route::get('profile', 'get');
     Route::patch('profile', 'update');
+    Route::get('review-profiles', 'getReviewProfiles')->middleware(IsAdmin::class);;
 });
 
 Route::controller(MembershipCategoriesController::class)->group(function(){
