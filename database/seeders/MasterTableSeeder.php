@@ -73,10 +73,10 @@ class MasterTableSeeder extends Seeder
             [4, "FL", "Florida"],
             [4, "TN", "Tennessee"],
             [4, "KY", "Kentucky"],
-            [5, "TX", "Texas", ["North","DFW"]],
+            [5, "TX", "Texas", "North/DFW"],
             [5, "OK", "Oklahama"],
             [5, "AR", "Arkansas"],
-            [6, "TX", "Texas", ["South","Houston","Austin","San Auntonio"]],
+            [6, "TX", "Texas", "South/Houston/Austin/San Auntonio"],
             [6, "LA", "Louisiana"],
             [7, "ND", "North Dakota"],
             [7, "SD", "South Dakota"],
@@ -93,11 +93,11 @@ class MasterTableSeeder extends Seeder
             [8, "AK", "Alaska"],
             [8, "WA", "Washington"],
             [8, "OR", "Oregon"],
-            [8, "CA", "California", ["Bay Area"]],
+            [8, "CA", "California", "Bay Area"],
             [8, "MO", "Montana"],
             [8, "WY", "Wyoming"],
             [8, "ID", "Idaho"],
-            [9, "CA", "California", ["SoCal"]],
+            [9, "CA", "California", "SoCal"],
             [9, "NV", "Nevada"],
             [9, "AZ", "Arizona"],
             [9, "NM", "New Mexico"],
@@ -112,7 +112,7 @@ class MasterTableSeeder extends Seeder
                 'short_name' => $state[1],
             ]);
 
-            $areaNames = array_key_exists(3,$state) ? $state[3] : [];
+            $areaNames = array_key_exists(3,$state) ? [$state[3]] : [];
 
             foreach ($areaNames as $areaName) {
                 MetroAreas::updateOrCreate([
