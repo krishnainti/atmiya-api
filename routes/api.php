@@ -4,7 +4,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 use App\Http\Controllers\API\RegisterController;
-use App\Http\Controllers\API\ProductController;
+use App\Http\Controllers\API\PaymentController;
 use App\Http\Controllers\API\MembershipCategoriesController;
 use App\Http\Controllers\API\ChaptersController;
 use App\Http\Controllers\API\ChapterStatesController;
@@ -27,12 +27,13 @@ Route::controller(RegisterController::class)->group(function(){
     Route::post('login', 'login');
     Route::post('submit-profile', 'submitProfile');
     Route::get('find-profile-by-email', 'findProfileByEmail');
+    Route::get('capture-paypal-payment', 'captureRegistrationPaypalPaymentOrder');
 });
 
 Route::middleware('auth:sanctum')->controller(RegisterController::class)->group(function(){
     Route::get('profile', 'get');
     Route::patch('profile', 'update');
-    Route::get('review-profiles', 'getReviewProfiles')->middleware(IsAdmin::class);;
+    Route::get('review-profiles', 'getReviewProfiles')->middleware(IsAdmin::class);
 });
 
 Route::controller(MembershipCategoriesController::class)->group(function(){

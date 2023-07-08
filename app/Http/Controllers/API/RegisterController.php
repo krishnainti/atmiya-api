@@ -2,17 +2,19 @@
 
 namespace App\Http\Controllers\API;
 
-use App\Http\Controllers\API\BaseController as BaseController;
-use App\Http\Requests\RegisterRequest;
+use App\Models\User;
 use App\Models\Payment;
 use App\Models\Profile;
-use App\Models\User;
-use Illuminate\Http\JsonResponse;
+use App\Src\Payment\Paypal;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
-use App\Src\Registration\Writer as RegistrationWriter;
+use Illuminate\Support\Facades\Auth;
+use App\Http\Requests\RegisterRequest;
+use Illuminate\Auth\Events\Registered;
 use App\Src\Registration\Reader as RegistrationReader;
+use App\Src\Registration\Writer as RegistrationWriter;
+use App\Http\Controllers\API\BaseController as BaseController;
 
 class RegisterController extends BaseController
 {
@@ -80,14 +82,13 @@ class RegisterController extends BaseController
                 return $this->sendResponse($success, 'User login successfully.');
             }
 
-            return $this->sendError(["message" => 'Unauthorised.', "mode" => "profile_under_review"], ['error' => 'Unauthorised'], 500);
+            return $this->sendError(["message" => 'Unauthorized.', "mode" => "profile_under_review"], ['error' => 'Unauthorized'], 500);
         } else {
-            return $this->sendError(["message" => 'Unauthorised.', "mode" => "user_not_found"], ['error' => 'Unauthorised'], 500);
+            return $this->sendError(["message" => 'Unauthorized.', "mode" => "user_not_found"], ['error' => 'Unauthorized'], 500);
         }
     }
 
-
-      /**
+    /**
      * get api
      *
      * @return \Illuminate\Http\Response
@@ -101,7 +102,7 @@ class RegisterController extends BaseController
 
     }
 
-        /**
+    /**
      * update api
      *
      * @return \Illuminate\Http\Response
@@ -112,20 +113,20 @@ class RegisterController extends BaseController
 
         $validated_input = $request->validated();
 
-        if($validated_input['id'] != $user->id) {
+        if ($validated_input['id'] != $user->id) {
             return $this->sendError('Unauthorized request.', ['error' => 'Unauthorized']);
         }
 
-         // save data user table
-         DB::beginTransaction();
-         if(array_key_exists('password', $validated_input)) {
-             $validated_input['password'] = bcrypt($validated_input['password']);
-         }
-         $validated_input['name'] = $validated_input['first_name'] . " " . $validated_input['last_name'];
-         User::find($user->id)->update($validated_input);
+        // save data user table
+        DB::beginTransaction();
+        if (array_key_exists('password', $validated_input)) {
+            $validated_input['password'] = bcrypt($validated_input['password']);
+        }
+        $validated_input['name'] = $validated_input['first_name'] . " " . $validated_input['last_name'];
+        User::find($user->id)->update($validated_input);
 
-         Profile::find($user->profile->id)->update($validated_input);
-         DB::commit();
+        Profile::find($user->profile->id)->update($validated_input);
+        DB::commit();
 
         $registrationReader = new RegistrationReader();
         $data['user'] = $registrationReader->getUser($user->id);
@@ -151,8 +152,8 @@ class RegisterController extends BaseController
         return $this->sendResponse($data, 'User updated successfully.');
     }
 
-    public function findProfileByEmail(Request $request): JsonResponse {
-
+    public function findProfileByEmail(Request $request): JsonResponse
+    {
         if (!isset($request->email)) {
             return $this->sendError('Please provide the email', ['error' => 'Please provide the email'], 422);
         }
@@ -170,7 +171,8 @@ class RegisterController extends BaseController
 
     }
 
-    function getReviewProfiles(Request $request) {
+    public function getReviewProfiles(Request $request): JsonResponse
+    {
 
         $registrationReader = new RegistrationReader();
 
@@ -180,8 +182,35 @@ class RegisterController extends BaseController
 
     }
 
+    public function captureRegistrationPaypalPaymentOrder(Request $request): JsonResponse
+    {
+        $payment_id = $request->token;
+        $payment = Payment::where('payment_id', $payment_id)->first();
+        if ($payment_id == null || empty($payment)) {
+            return $this->sendError('Payment.', ['error' => 'User payment details found.']);
+        }
 
+        $paypal = new Paypal();
+        $Paypalresponse = $paypal->capturePaymentOrder($payment->payment_id);
+        DB::beginTransaction();
 
+        if (isset($Paypalresponse['status']) && $Paypalresponse['status'] == 'COMPLETED') {
+            $payment = Payment::where('payment_id', $payment->payment_id)->first();
+            $payment->status = 'completed';
+            $payment->meta = $Paypalresponse;
+            $payment->save();
+
+            $profile = $payment->for;
+            $profile->status = 'payment_done';
+            $profile->save();
+            DB::commit();
+            return $this->sendResponse(['status' => true, 'payment' => $payment], 'Payment completed Successfully');
+
+        } else if (isset($Paypalresponse['error']) && ($Paypalresponse['error']['message'])) {
+            return $this->sendError('Payment.', ['response' => $Paypalresponse, 'message' => $Paypalresponse['error']['message']]);
+        } else {
+            return $this->sendError('Payment.', ['error' => 'some thing went wrong.']);
+        }
+    }
 
 }
-

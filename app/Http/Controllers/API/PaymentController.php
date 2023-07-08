@@ -2,65 +2,23 @@
 
 namespace App\Http\Controllers\API;
 
-use App\Models\Payment;
-use Illuminate\Http\Request;
 use App\Http\Controllers\API\BaseController as BaseController;
+use App\Models\Payment;
+use App\Src\Payment\Paypal;
+use Illuminate\Http\Request;
 
 class PaymentController extends BaseController
 {
-    /**
-     * Display a listing of the resource.
-     */
-    public function index()
+    public function capturePaymentOrder(Request $request)
     {
-        //
-    }
+        $payment = Payment::where('payment_id', $request->id)->first();
 
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
-    {
-        //
-    }
+        if (empty($payment)) {
+            return $this->sendError('Profile.', ['error' => 'Unauthorized']);
+        }
 
-    /**
-     * Store a newly created resource in storage.
-     */
-    public function store(Request $request)
-    {
-        //
-    }
+        $paypal = new Paypal();
+        return $paypal->capturePaymentOrder($payment->payment_id);
 
-    /**
-     * Display the specified resource.
-     */
-    public function show(Payment $payment)
-    {
-        //
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(Payment $payment)
-    {
-        //
-    }
-
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, Payment $payment)
-    {
-        //
-    }
-
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(Payment $payment)
-    {
-        //
     }
 }

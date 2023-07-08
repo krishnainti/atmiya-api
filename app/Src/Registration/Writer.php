@@ -5,6 +5,8 @@ namespace App\Src\Registration;
 use App\Models\User;
 use App\Models\Payment;
 use App\Models\Profile;
+use App\Src\Payment\Paypal;
+use Illuminate\Support\Facades\Log;
 
 class Writer {
 
@@ -79,7 +81,21 @@ class Writer {
                 'payment_done_by' => $this->user->id,
             ];
         } else {
+            $payment_id = null;
+            $redirect_url = null;
+
+            if(in_array(strtolower($this->registrationData['payment_mode']), ['paypal','card'])) {
+                $paypal = new Paypal();
+                $paypalResponse = $paypal->initiatePayment($membershipCategory->fee);
+                Log::debug($paypalResponse);
+                if($paypalResponse['status']) {
+                    $payment_id = $paypalResponse['id'];
+                    $redirect_url = $paypalResponse['redirect_url'];
+                }
+            }
+
             $paymentData = [
+                'payment_id' => $payment_id,
                 'for_id' => $this->profile->id,
                 'for_type' => Profile::class,
                 'payment_mode' => in_array(strtolower($this->registrationData['payment_mode']), ['paypal','card']) ? 'paypal' : 'zelle',
@@ -88,8 +104,9 @@ class Writer {
                 'payment_done_by' => $this->user->id,
             ];
         }
-
-        return Payment::create($paymentData);
+        $paymentData = Payment::create($paymentData);
+        $paymentData['redirect_url'] = $redirect_url;
+        return $paymentData;
     }
 
 
