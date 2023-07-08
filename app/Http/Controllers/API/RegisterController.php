@@ -95,6 +95,7 @@ class RegisterController extends BaseController
     public function get(Request $request): JsonResponse
     {
         $registrationReader = new RegistrationReader();
+
         $data['user'] = $registrationReader->getUser($request->user()->id);
 
         return $this->sendResponse($data, 'User details.');
@@ -179,6 +180,53 @@ class RegisterController extends BaseController
         return $this->sendResponse($data, 'Users data.');
 
     }
+
+    function getSingleReviewProfile(Request $request) {
+
+        $registrationReader = new RegistrationReader();
+
+        $data['user'] = $registrationReader->getUser($request->userId);
+
+        return $this->sendResponse($data, 'User data.');
+
+    }
+
+    function updateReviewProfileStatus(Request $request) {
+
+        if (!in_array($request->status, ["admin_approved", "admin_rejected"])) {
+            return $this->sendError(["message" => 'InValid Status.', "mode" => "invalid_status"], ['error' => 'InValid Status'], 500);
+        }
+
+        $registrationWriter = new RegistrationWriter([]);
+
+        $registrationWriter->setUserId($request->userId);
+
+        if (!$registrationWriter->profile) {
+            return $this->sendError(["message" => 'Profile not found for the user.', "mode" => "profile_not_found"], ['error' => 'Profile not found for the user'], 500);
+        }
+
+
+        if ($registrationWriter->profile->status !== "under_review") {
+            if ($registrationWriter->profile->status === 'admin_approved') {
+                return $this->sendError(["message" => 'Already Approved.', "mode" => "already_approved"], ['error' => 'Already Approved'], 500);
+            }
+
+            if ($registrationWriter->profile->status === 'admin_rejected') {
+                return $this->sendError(["message" => 'Already Rejected.', "mode" => "already_rejected"], ['error' => 'Already Rejected'], 500);
+            }
+        }
+
+        $registrationWriter->updateStatus($request->status);
+
+        return $this->sendResponse([], 'Status Updated successfully.');
+
+    }
+
+
+
+
+
+
 
 
 

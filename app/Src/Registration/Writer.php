@@ -10,7 +10,7 @@ class Writer {
 
     private $registrationData;
     public $user;
-    public  $profile;
+    public $profile;
 
 
     public function __construct($registrationData) {
@@ -139,7 +139,7 @@ class Writer {
 
     }
 
-    function updatePayment() {
+    public function updatePayment() {
 
         Payment::whereIn('id', $this->profile->payments->pluck("id")->toArray())->update(["status" => "expired"]);
 
@@ -167,6 +167,14 @@ class Writer {
 
 
         return Payment::create($paymentData);
+    }
+
+    public function updateStatus($status) {
+
+        $this->profile->status = $status;
+
+        return $this->profile->save();
+
     }
 
 }

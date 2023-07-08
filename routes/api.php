@@ -33,6 +33,8 @@ Route::middleware('auth:sanctum')->controller(RegisterController::class)->group(
     Route::get('profile', 'get');
     Route::patch('profile', 'update');
     Route::get('review-profiles', 'getReviewProfiles')->middleware(IsAdmin::class);;
+    Route::get('review-profiles/{userId}', 'getSingleReviewProfile')->middleware(IsAdmin::class);;
+    Route::put('review-profiles/{userId}/update-status', 'updateReviewProfileStatus')->middleware(IsAdmin::class);;
 });
 
 Route::controller(MembershipCategoriesController::class)->group(function(){
