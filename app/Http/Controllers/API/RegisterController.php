@@ -78,10 +78,15 @@ class RegisterController extends BaseController
             }
 
             $profile = $user->profile;
+
             if ($profile->status == 'admin_approved') {
                 $success['token'] = $user->createToken('atmiya')->plainTextToken;
-                $success['user'] = $user->name;
+                $success['user'] = $user;
                 return $this->sendResponse($success, 'User login successfully.');
+            }
+
+            if ($profile->status == 'admin_rejected') {
+                return $this->sendError(["message" => 'Unauthorised.', "mode" => "profile_rejected"], ['error' => 'Unauthorised'], 500);
             }
 
             return $this->sendError(["message" => 'Unauthorised.', "mode" => "profile_under_review"], ['error' => 'Unauthorised'], 500);
