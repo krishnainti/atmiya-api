@@ -2,19 +2,20 @@
 
 namespace App\Http\Controllers\API;
 
-use App\Models\User;
+use App\Http\Controllers\API\BaseController as BaseController;
+use App\Http\Requests\RegisterRequest;
+use App\Mail\ProfileStatusUpdateNotification;
 use App\Models\Payment;
 use App\Models\Profile;
+use App\Models\User;
 use App\Src\Payment\Paypal;
-use Illuminate\Http\Request;
-use Illuminate\Http\JsonResponse;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Auth;
-use App\Http\Requests\RegisterRequest;
-use Illuminate\Auth\Events\Registered;
 use App\Src\Registration\Reader as RegistrationReader;
 use App\Src\Registration\Writer as RegistrationWriter;
-use App\Http\Controllers\API\BaseController as BaseController;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
 
 class RegisterController extends BaseController
 {
@@ -39,9 +40,16 @@ class RegisterController extends BaseController
                 $registrationWriter->updateProfile();
 
                 // TODO: Add condition if payment done
-                // if ($registrationWriter->profile->payments)
                 // $registrationWriter->profile->payments has already payment done
-                $paymentDetails = $registrationWriter->createPayment();
+                $completed_profile_payment = Payment::where([
+                    'for_type' => Profile::class,
+                    'for_id' => $registrationWriter->profile->id,
+                    'status' => 'completed',
+                ])->first();
+                
+                if(!empty($completed_profile_payment)) {
+                    $paymentDetails = $registrationWriter->createPayment();
+                }
             } else {
                 $registrationWriter->createUser();
                 $registrationWriter->createProfile();
@@ -153,6 +161,7 @@ class RegisterController extends BaseController
             $user->profile->status = 'under_review';
             $user->profile->save();
             // TODO: send EMAIL
+            Mail::to($user->email)->send(new ProfileStatusUpdateNotification('Under Review'));
         } else {
             return $this->sendError('Profile.', ['error' => 'Unauthorized']);
         }
@@ -193,7 +202,8 @@ class RegisterController extends BaseController
 
     }
 
-    function getSingleReviewProfile(Request $request) {
+    public function getSingleReviewProfile(Request $request)
+    {
 
         $registrationReader = new RegistrationReader();
 
@@ -203,7 +213,8 @@ class RegisterController extends BaseController
 
     }
 
-    function updateReviewProfileStatus(Request $request) {
+    public function updateReviewProfileStatus(Request $request)
+    {
 
         if (!in_array($request->status, ["admin_approved", "admin_rejected"])) {
             return $this->sendError(["message" => 'InValid Status.', "mode" => "invalid_status"], ['error' => 'InValid Status'], 500);
@@ -216,7 +227,6 @@ class RegisterController extends BaseController
         if (!$registrationWriter->profile) {
             return $this->sendError(["message" => 'Profile not found for the user.', "mode" => "profile_not_found"], ['error' => 'Profile not found for the user'], 500);
         }
-
 
         if ($registrationWriter->profile->status !== "under_review") {
             if ($registrationWriter->profile->status === 'admin_approved') {
@@ -233,7 +243,6 @@ class RegisterController extends BaseController
         return $this->sendResponse([], 'Status Updated successfully.');
 
     }
-
 
     public function captureRegistrationPaypalPaymentOrder(Request $request): JsonResponse
     {

@@ -1,14 +1,13 @@
 <?php
 
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Route;
-
-use App\Http\Controllers\API\RegisterController;
-use App\Http\Controllers\API\PaymentController;
-use App\Http\Controllers\API\MembershipCategoriesController;
-use App\Http\Controllers\API\ChaptersController;
-use App\Http\Controllers\API\ChapterStatesController;
 use App\Http\Middleware\IsAdmin;
+
+use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\API\ChaptersController;
+use App\Http\Controllers\API\RegisterController;
+use App\Http\Controllers\API\ChapterStatesController;
+use App\Http\Controllers\API\MembershipCategoriesController;
 
 
 /*

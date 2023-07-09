@@ -7,6 +7,8 @@ use App\Models\Payment;
 use App\Models\Profile;
 use App\Src\Payment\Paypal;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
+use App\Mail\ProfileStatusUpdateNotification;
 
 class Writer {
 
@@ -150,8 +152,19 @@ class Writer {
         $this->profile->country = $this->registrationData['country'];
 
         // TODO: add condition same as controller
-        $this->profile->membership_category = $this->registrationData['membership_category'];
-        $this->profile->payment_mode = $this->registrationData['payment_mode'];
+
+        $completed_profile_payment = Payment::where([
+            'for_type' => Profile::class,
+            'for_id' => $this->profile->id,
+            'status' => 'completed',
+        ])->first();
+        
+        if(!empty($completed_profile_payment)) {
+            $this->profile->membership_category = $this->registrationData['membership_category'];
+            $this->profile->payment_mode = $this->registrationData['payment_mode'];
+        }
+        
+
         // $this->profile->status = "pending";
 
         $this->profile->save();
@@ -193,8 +206,8 @@ class Writer {
         $this->profile->status = $status;
 
         $this->profile->save();
-
         // TODO: send EMAIL
+        Mail::to($this->profile->user->email)->send(new ProfileStatusUpdateNotification(ucwords(str_replace("_"," ",$status))));
         return;
     }
 
