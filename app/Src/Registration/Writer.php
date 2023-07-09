@@ -131,9 +131,11 @@ class Writer {
         $this->profile->metro_area = $this->registrationData['metro_area'];
         $this->profile->zip_code = $this->registrationData['zip_code'];
         $this->profile->country = $this->registrationData['country'];
+
+        // TODO: add condition same as controller
         $this->profile->membership_category = $this->registrationData['membership_category'];
         $this->profile->payment_mode = $this->registrationData['payment_mode'];
-        $this->profile->status = "pending";
+        // $this->profile->status = "pending";
 
         $this->profile->save();
 
@@ -141,7 +143,7 @@ class Writer {
 
     public function updatePayment() {
 
-        Payment::whereIn('id', $this->profile->payments->pluck("id")->toArray())->update(["status" => "expired"]);
+        // Payment::whereIn('id', $this->profile->payments->pluck("id")->toArray())->update(["status" => "expired"]);
 
         $membershipCategory = $this->profile->membershipCategory;
 
@@ -173,8 +175,10 @@ class Writer {
 
         $this->profile->status = $status;
 
-        return $this->profile->save();
+        $this->profile->save();
 
+        // TODO: send EMAIL
+        return;
     }
 
 }

@@ -35,7 +35,11 @@ class RegisterController extends BaseController
                 $registrationWriter->setUserId($validated_input['id']);
                 $registrationWriter->updateUser();
                 $registrationWriter->updateProfile();
-                $paymentDetails = $registrationWriter->updatePayment();
+
+                // TODO: Add condition if payment done
+                // if ($registrationWriter->profile->payments)
+                // $registrationWriter->profile->payments has already payment done
+                $paymentDetails = $registrationWriter->createPayment();
             } else {
                 $registrationWriter->createUser();
                 $registrationWriter->createProfile();
@@ -142,6 +146,7 @@ class RegisterController extends BaseController
         if ($user->profile) {
             $user->profile->status = 'under_review';
             $user->profile->save();
+            // TODO: send EMAIL
         } else {
             return $this->sendError('Profile.', ['error' => 'Unauthorized']);
         }
