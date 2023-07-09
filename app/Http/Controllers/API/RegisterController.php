@@ -37,7 +37,11 @@ class RegisterController extends BaseController
                 $registrationWriter->setUserId($validated_input['id']);
                 $registrationWriter->updateUser();
                 $registrationWriter->updateProfile();
-                $paymentDetails = $registrationWriter->updatePayment();
+
+                // TODO: Add condition if payment done
+                // if ($registrationWriter->profile->payments)
+                // $registrationWriter->profile->payments has already payment done
+                $paymentDetails = $registrationWriter->createPayment();
             } else {
                 $registrationWriter->createUser();
                 $registrationWriter->createProfile();
@@ -76,10 +80,15 @@ class RegisterController extends BaseController
             }
 
             $profile = $user->profile;
+
             if ($profile->status == 'admin_approved') {
                 $success['token'] = $user->createToken('atmiya')->plainTextToken;
-                $success['user'] = $user->name;
+                $success['user'] = $user;
                 return $this->sendResponse($success, 'User login successfully.');
+            }
+
+            if ($profile->status == 'admin_rejected') {
+                return $this->sendError(["message" => 'Unauthorized.', "mode" => "profile_rejected"], ['error' => 'Unauthorized'], 500);
             }
 
             return $this->sendError(["message" => 'Unauthorized.', "mode" => "profile_under_review"], ['error' => 'Unauthorized'], 500);
@@ -96,6 +105,7 @@ class RegisterController extends BaseController
     public function get(Request $request): JsonResponse
     {
         $registrationReader = new RegistrationReader();
+
         $data['user'] = $registrationReader->getUser($request->user()->id);
 
         return $this->sendResponse($data, 'User details.');
@@ -142,6 +152,7 @@ class RegisterController extends BaseController
         if ($user->profile) {
             $user->profile->status = 'under_review';
             $user->profile->save();
+            // TODO: send EMAIL
         } else {
             return $this->sendError('Profile.', ['error' => 'Unauthorized']);
         }
@@ -182,6 +193,48 @@ class RegisterController extends BaseController
 
     }
 
+    function getSingleReviewProfile(Request $request) {
+
+        $registrationReader = new RegistrationReader();
+
+        $data['user'] = $registrationReader->getUser($request->userId);
+
+        return $this->sendResponse($data, 'User data.');
+
+    }
+
+    function updateReviewProfileStatus(Request $request) {
+
+        if (!in_array($request->status, ["admin_approved", "admin_rejected"])) {
+            return $this->sendError(["message" => 'InValid Status.', "mode" => "invalid_status"], ['error' => 'InValid Status'], 500);
+        }
+
+        $registrationWriter = new RegistrationWriter([]);
+
+        $registrationWriter->setUserId($request->userId);
+
+        if (!$registrationWriter->profile) {
+            return $this->sendError(["message" => 'Profile not found for the user.', "mode" => "profile_not_found"], ['error' => 'Profile not found for the user'], 500);
+        }
+
+
+        if ($registrationWriter->profile->status !== "under_review") {
+            if ($registrationWriter->profile->status === 'admin_approved') {
+                return $this->sendError(["message" => 'Already Approved.', "mode" => "already_approved"], ['error' => 'Already Approved'], 500);
+            }
+
+            if ($registrationWriter->profile->status === 'admin_rejected') {
+                return $this->sendError(["message" => 'Already Rejected.', "mode" => "already_rejected"], ['error' => 'Already Rejected'], 500);
+            }
+        }
+
+        $registrationWriter->updateStatus($request->status);
+
+        return $this->sendResponse([], 'Status Updated successfully.');
+
+    }
+
+
     public function captureRegistrationPaypalPaymentOrder(Request $request): JsonResponse
     {
         $payment_id = $request->token;
@@ -191,13 +244,13 @@ class RegisterController extends BaseController
         }
 
         $paypal = new Paypal();
-        $Paypalresponse = $paypal->capturePaymentOrder($payment->payment_id);
+        $paypalResponse = $paypal->capturePaymentOrder($payment->payment_id);
         DB::beginTransaction();
 
-        if (isset($Paypalresponse['status']) && $Paypalresponse['status'] == 'COMPLETED') {
+        if (isset($paypalResponse['status']) && $paypalResponse['status'] == 'COMPLETED') {
             $payment = Payment::where('payment_id', $payment->payment_id)->first();
             $payment->status = 'completed';
-            $payment->meta = $Paypalresponse;
+            $payment->meta = $paypalResponse;
             $payment->save();
 
             $profile = $payment->for;
@@ -206,8 +259,8 @@ class RegisterController extends BaseController
             DB::commit();
             return $this->sendResponse(['status' => true, 'payment' => $payment], 'Payment completed Successfully');
 
-        } else if (isset($Paypalresponse['error']) && ($Paypalresponse['error']['message'])) {
-            return $this->sendError('Payment.', ['response' => $Paypalresponse, 'message' => $Paypalresponse['error']['message']]);
+        } else if (isset($paypalResponse['error']) && ($paypalResponse['error']['message'])) {
+            return $this->sendError('Payment.', ['response' => $paypalResponse, 'message' => $paypalResponse['error']['message']]);
         } else {
             return $this->sendError('Payment.', ['error' => 'some thing went wrong.']);
         }
