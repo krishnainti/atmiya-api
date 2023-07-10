@@ -4,15 +4,18 @@ namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\API\BaseController as BaseController;
 use App\Http\Requests\RegisterRequest;
+use App\Mail\ProfileStatusUpdateNotification;
 use App\Models\Payment;
 use App\Models\Profile;
 use App\Models\User;
+use App\Src\Payment\Paypal;
+use App\Src\Registration\Reader as RegistrationReader;
+use App\Src\Registration\Writer as RegistrationWriter;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
-use App\Src\Registration\Writer as RegistrationWriter;
-use App\Src\Registration\Reader as RegistrationReader;
+use Illuminate\Support\Facades\Mail;
 
 class RegisterController extends BaseController
 {
@@ -37,9 +40,16 @@ class RegisterController extends BaseController
                 $registrationWriter->updateProfile();
 
                 // TODO: Add condition if payment done
-                // if ($registrationWriter->profile->payments)
                 // $registrationWriter->profile->payments has already payment done
-                $paymentDetails = $registrationWriter->createPayment();
+                $completed_profile_payment = Payment::where([
+                    'for_type' => Profile::class,
+                    'for_id' => $registrationWriter->profile->id,
+                    'status' => 'completed',
+                ])->first();
+                
+                if(!empty($completed_profile_payment)) {
+                    $paymentDetails = $registrationWriter->createPayment();
+                }
             } else {
                 $registrationWriter->createUser();
                 $registrationWriter->createProfile();
@@ -86,17 +96,16 @@ class RegisterController extends BaseController
             }
 
             if ($profile->status == 'admin_rejected') {
-                return $this->sendError(["message" => 'Unauthorised.', "mode" => "profile_rejected"], ['error' => 'Unauthorised'], 500);
+                return $this->sendError(["message" => 'Unauthorized.', "mode" => "profile_rejected"], ['error' => 'Unauthorized'], 500);
             }
 
-            return $this->sendError(["message" => 'Unauthorised.', "mode" => "profile_under_review"], ['error' => 'Unauthorised'], 500);
+            return $this->sendError(["message" => 'Unauthorized.', "mode" => "profile_under_review"], ['error' => 'Unauthorized'], 500);
         } else {
-            return $this->sendError(["message" => 'Unauthorised.', "mode" => "user_not_found"], ['error' => 'Unauthorised'], 500);
+            return $this->sendError(["message" => 'Unauthorized.', "mode" => "user_not_found"], ['error' => 'Unauthorized'], 500);
         }
     }
 
-
-      /**
+    /**
      * get api
      *
      * @return \Illuminate\Http\Response
@@ -111,7 +120,7 @@ class RegisterController extends BaseController
 
     }
 
-        /**
+    /**
      * update api
      *
      * @return \Illuminate\Http\Response
@@ -122,20 +131,20 @@ class RegisterController extends BaseController
 
         $validated_input = $request->validated();
 
-        if($validated_input['id'] != $user->id) {
+        if ($validated_input['id'] != $user->id) {
             return $this->sendError('Unauthorized request.', ['error' => 'Unauthorized']);
         }
 
-         // save data user table
-         DB::beginTransaction();
-         if(array_key_exists('password', $validated_input)) {
-             $validated_input['password'] = bcrypt($validated_input['password']);
-         }
-         $validated_input['name'] = $validated_input['first_name'] . " " . $validated_input['last_name'];
-         User::find($user->id)->update($validated_input);
+        // save data user table
+        DB::beginTransaction();
+        if (array_key_exists('password', $validated_input)) {
+            $validated_input['password'] = bcrypt($validated_input['password']);
+        }
+        $validated_input['name'] = $validated_input['first_name'] . " " . $validated_input['last_name'];
+        User::find($user->id)->update($validated_input);
 
-         Profile::find($user->profile->id)->update($validated_input);
-         DB::commit();
+        Profile::find($user->profile->id)->update($validated_input);
+        DB::commit();
 
         $registrationReader = new RegistrationReader();
         $data['user'] = $registrationReader->getUser($user->id);
@@ -152,6 +161,7 @@ class RegisterController extends BaseController
             $user->profile->status = 'under_review';
             $user->profile->save();
             // TODO: send EMAIL
+            Mail::to($user->email)->send(new ProfileStatusUpdateNotification('Under Review'));
         } else {
             return $this->sendError('Profile.', ['error' => 'Unauthorized']);
         }
@@ -162,8 +172,8 @@ class RegisterController extends BaseController
         return $this->sendResponse($data, 'User updated successfully.');
     }
 
-    public function findProfileByEmail(Request $request): JsonResponse {
-
+    public function findProfileByEmail(Request $request): JsonResponse
+    {
         if (!isset($request->email)) {
             return $this->sendError('Please provide the email', ['error' => 'Please provide the email'], 422);
         }
@@ -181,7 +191,8 @@ class RegisterController extends BaseController
 
     }
 
-    function getReviewProfiles(Request $request) {
+    public function getReviewProfiles(Request $request): JsonResponse
+    {
 
         $registrationReader = new RegistrationReader();
 
@@ -191,7 +202,8 @@ class RegisterController extends BaseController
 
     }
 
-    function getSingleReviewProfile(Request $request) {
+    public function getSingleReviewProfile(Request $request)
+    {
 
         $registrationReader = new RegistrationReader();
 
@@ -201,7 +213,8 @@ class RegisterController extends BaseController
 
     }
 
-    function updateReviewProfileStatus(Request $request) {
+    public function updateReviewProfileStatus(Request $request)
+    {
 
         if (!in_array($request->status, ["admin_approved", "admin_rejected"])) {
             return $this->sendError(["message" => 'InValid Status.', "mode" => "invalid_status"], ['error' => 'InValid Status'], 500);
@@ -214,7 +227,6 @@ class RegisterController extends BaseController
         if (!$registrationWriter->profile) {
             return $this->sendError(["message" => 'Profile not found for the user.', "mode" => "profile_not_found"], ['error' => 'Profile not found for the user'], 500);
         }
-
 
         if ($registrationWriter->profile->status !== "under_review") {
             if ($registrationWriter->profile->status === 'admin_approved') {
@@ -232,14 +244,35 @@ class RegisterController extends BaseController
 
     }
 
+    public function captureRegistrationPaypalPaymentOrder(Request $request): JsonResponse
+    {
+        $payment_id = $request->token;
+        $payment = Payment::where('payment_id', $payment_id)->first();
+        if ($payment_id == null || empty($payment)) {
+            return $this->sendError('Payment.', ['error' => 'User payment details found.']);
+        }
 
+        $paypal = new Paypal();
+        $paypalResponse = $paypal->capturePaymentOrder($payment->payment_id);
+        DB::beginTransaction();
 
+        if (isset($paypalResponse['status']) && $paypalResponse['status'] == 'COMPLETED') {
+            $payment = Payment::where('payment_id', $payment->payment_id)->first();
+            $payment->status = 'completed';
+            $payment->meta = $paypalResponse;
+            $payment->save();
 
+            $profile = $payment->for;
+            $profile->status = 'payment_done';
+            $profile->save();
+            DB::commit();
+            return $this->sendResponse(['status' => true, 'payment' => $payment], 'Payment completed Successfully');
 
-
-
-
-
+        } else if (isset($paypalResponse['error']) && ($paypalResponse['error']['message'])) {
+            return $this->sendError('Payment.', ['response' => $paypalResponse, 'message' => $paypalResponse['error']['message']]);
+        } else {
+            return $this->sendError('Payment.', ['error' => 'some thing went wrong.']);
+        }
+    }
 
 }
-

@@ -38,4 +38,9 @@ class Profile extends Model
         return $this->morphMany(Payment::class, 'for');
     }
 
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
+
 }

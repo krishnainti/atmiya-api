@@ -14,6 +14,7 @@ return new class extends Migration
         Schema::create('payments', function (Blueprint $table) {
             $table->id();
             $table->morphs('for');
+            $table->string('payment_id')->unique()->nullable();
             $table->string('payment_mode');
             $table->text('meta')->nullable();
             $table->decimal('amount', 12, 2);
