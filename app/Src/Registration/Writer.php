@@ -82,6 +82,7 @@ class Writer {
                 'status' => 'completed',
                 'payment_done_by' => $this->user->id,
             ];
+
         } else {
             $payment_id = null;
             $redirect_url = null;
@@ -90,7 +91,7 @@ class Writer {
                 $paypal = new Paypal();
                 $paypalResponse = $paypal->initiatePayment($membershipCategory->fee);
                 Log::debug($paypalResponse);
-                if($paypalResponse['status']) {
+                if ($paypalResponse['status']) {
                     $payment_id = $paypalResponse['id'];
                     $redirect_url = $paypalResponse['redirect_url'];
                 }
@@ -158,14 +159,11 @@ class Writer {
             'for_id' => $this->profile->id,
             'status' => 'completed',
         ])->first();
-        
-        if(!empty($completed_profile_payment)) {
+
+        if (empty($completed_profile_payment)) {
             $this->profile->membership_category = $this->registrationData['membership_category'];
             $this->profile->payment_mode = $this->registrationData['payment_mode'];
         }
-        
-
-        // $this->profile->status = "pending";
 
         $this->profile->save();
 

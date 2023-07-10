@@ -23,6 +23,6 @@ return [
     'locale' => env('PAYPAL_LOCALE', 'en_US'), // force gateway language  i.e. it_IT, es_ES, en_US ... (for express checkout only)
     'validate_ssl' => env('PAYPAL_VALIDATE_SSL', true), // Validate SSL when creating api client.
 
-    'return_url' => env('APP_URL').'/api/capture-paypal-payment',
-    "cancel_url" => env('APP_URL').'/cancelTransaction',
+    'return_url' => env('UI_URL').'/capture-paypal-payment',
+    "cancel_url" => env('UI_URL').'/cancelTransaction',
 ];

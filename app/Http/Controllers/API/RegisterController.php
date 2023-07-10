@@ -39,15 +39,13 @@ class RegisterController extends BaseController
                 $registrationWriter->updateUser();
                 $registrationWriter->updateProfile();
 
-                // TODO: Add condition if payment done
-                // $registrationWriter->profile->payments has already payment done
                 $completed_profile_payment = Payment::where([
                     'for_type' => Profile::class,
                     'for_id' => $registrationWriter->profile->id,
                     'status' => 'completed',
                 ])->first();
-                
-                if(!empty($completed_profile_payment)) {
+
+                if (empty($completed_profile_payment)) {
                     $paymentDetails = $registrationWriter->createPayment();
                 }
             } else {

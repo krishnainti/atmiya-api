@@ -40,9 +40,6 @@ class Paypal
             ],
         ]);
 
-        Log::debug('-------------------processTransaction----------------');
-        Log::debug($response);
-        Log::debug('-------------------processTransaction end----------------');
 
         if (isset($response['id']) && $response['id'] != null) {
             // redirect to approve href
@@ -77,10 +74,6 @@ class Paypal
         $provider->setApiCredentials(config('paypal'));
         $provider->getAccessToken();
         $response = $provider->capturePaymentOrder($id);
-
-        Log::debug('--------------------successTransaction-----------------');
-        Log::debug($response);
-        Log::debug('--------------------successTransaction end-----------------');
 
        return  $response;
     }
