@@ -273,4 +273,24 @@ class RegisterController extends BaseController
         }
     }
 
+    public function cancelPaypalPayment(Request $request): JsonResponse {
+
+        $payment_id = $request->token;
+        $payment = Payment::where('payment_id', $payment_id)->first();
+        if ($payment_id == null || empty($payment)) {
+            return $this->sendError('Payment.', ['error' => 'User payment details found.']);
+        }
+
+        DB::beginTransaction();
+
+        $payment = Payment::where('payment_id', $payment->payment_id)->first();
+        $payment->status = 'canceled';
+        $payment->save();
+
+        DB::commit();
+
+        return $this->sendResponse(['status' => true], 'Payment status updated');
+
+    }
+
 }

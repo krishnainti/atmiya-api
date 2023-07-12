@@ -72,6 +72,7 @@ class Writer {
 
     public function createPayment() {
         $membershipCategory = $this->profile->membershipCategory;
+        $redirect_url = null;
 
         if ($membershipCategory->fee == 0) {
             $paymentData = [
@@ -85,7 +86,6 @@ class Writer {
 
         } else {
             $payment_id = null;
-            $redirect_url = null;
 
             if(in_array(strtolower($this->registrationData['payment_mode']), ['paypal','card'])) {
                 $paypal = new Paypal();
@@ -107,8 +107,10 @@ class Writer {
                 'payment_done_by' => $this->user->id,
             ];
         }
+
         $paymentData = Payment::create($paymentData);
         $paymentData['redirect_url'] = $redirect_url;
+
         return $paymentData;
     }
 

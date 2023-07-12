@@ -24,5 +24,5 @@ return [
     'validate_ssl' => env('PAYPAL_VALIDATE_SSL', true), // Validate SSL when creating api client.
 
     'return_url' => env('UI_URL').'/capture-paypal-payment',
-    "cancel_url" => env('UI_URL').'/cancelTransaction',
+    "cancel_url" => env('UI_URL').'/cancel-paypal-payment',
 ];

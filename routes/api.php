@@ -27,6 +27,7 @@ Route::controller(RegisterController::class)->group(function(){
     Route::post('submit-profile', 'submitProfile');
     Route::get('find-profile-by-email', 'findProfileByEmail');
     Route::get('capture-paypal-payment', 'captureRegistrationPaypalPaymentOrder');
+    Route::get('cancel-paypal-payment', 'cancelPaypalPayment');
 });
 
 Route::middleware('auth:sanctum')->controller(RegisterController::class)->group(function(){
