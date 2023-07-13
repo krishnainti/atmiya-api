@@ -207,7 +207,7 @@ class Writer {
 
         $this->profile->save();
         // TODO: send EMAIL
-        Mail::to($this->profile->user->email)->send(new ProfileStatusUpdateNotification(ucwords(str_replace("_"," ",$status))));
+        Mail::to($this->profile->user->email)->send(new ProfileStatusUpdateNotification($status, $this->profile));
         return;
     }
 

@@ -2,20 +2,20 @@
 
 namespace App\Http\Controllers\API;
 
-use App\Http\Controllers\API\BaseController as BaseController;
-use App\Http\Requests\RegisterRequest;
-use App\Mail\ProfileStatusUpdateNotification;
+use App\Models\User;
 use App\Models\Payment;
 use App\Models\Profile;
-use App\Models\User;
 use App\Src\Payment\Paypal;
+use Illuminate\Http\Request;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Mail;
+use App\Http\Requests\RegisterRequest;
+use App\Mail\PostRegistrationNotification;
 use App\Src\Registration\Reader as RegistrationReader;
 use App\Src\Registration\Writer as RegistrationWriter;
-use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Mail;
+use App\Http\Controllers\API\BaseController as BaseController;
 
 class RegisterController extends BaseController
 {
@@ -159,7 +159,7 @@ class RegisterController extends BaseController
             $user->profile->status = 'under_review';
             $user->profile->save();
             // TODO: send EMAIL
-            Mail::to($user->email)->send(new ProfileStatusUpdateNotification('Under Review'));
+            Mail::to($user->email)->send(new PostRegistrationNotification($user->profile));
         } else {
             return $this->sendError('Profile.', ['error' => 'Unauthorized']);
         }

@@ -16,10 +16,12 @@ class ProfileStatusUpdateNotification extends Mailable
      * Create a new message instance.
      */
     private $status;
+    private $profile;
 
-    public function __construct($status)
+    public function __construct($status, $profile)
     {
         $this->status = $status;
+        $this->profile = $profile;
     }
 
     /**
@@ -35,8 +37,16 @@ class ProfileStatusUpdateNotification extends Mailable
 
     public function build()
     {
-        $message = 'Your Atmiya Registration status Has been update to : ' . $this->status;
+        $name = $this->profile->first_name. ' ' . $this->profile->last_name;
+        $message='';
+        if($this->status == 'admin_rejected') {
+            $message = 'We thank you for your membership application to be part of ATMIYA mission to educate, empower, enrich and elevate community members.
+            Unfortunately, we cannot approve your application for membership at this time.
+            Please contact info@atmiyausa.org for any further information.';
+        }else if ($this->status == 'admin_approved'){
+            $message =  'CONGRATULATIONS and welcome to ATMIYA. Your membership application has been reviewed and approved. You can now log in to atmiyausa.org to view and edit your profile and access additional content including recorded sessions of IT Training, BEST and FIRE sessions etc.';
 
-        return $this->markdown('vendor.mail.html.message', ['slot' => $message]);
+        }
+        return $this->markdown('mails.statusNotification', ['message'=>$message , 'name'=>$name]);
     }
 }
