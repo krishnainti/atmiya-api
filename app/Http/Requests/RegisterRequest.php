@@ -35,7 +35,7 @@ class RegisterRequest extends FormRequest
         $rules =  [
              //Personal Details
              'reference_by' => 'bail|required|string|max:50',
-             'reference_phone' => 'bail|required|regex:/^\(?(\d{3})\)?[- ]?(\d{3})[- ]?(\d{4})$/|string',
+             'reference_phone' => 'bail|required|string',
              'first_name' => 'bail|required|string|max:50',
              'last_name' => 'bail|required|string|max:50',
 
@@ -66,7 +66,7 @@ class RegisterRequest extends FormRequest
 
             $rules['id'] = 'bail|required|min:1|exists:users,id';
             $rules['email'] = 'bail|required|email|max:100|unique:users,email,'.$this->get('id');
-            $rules['phone'] = 'bail|required|regex:/^\(?(\d{3})\)?[- ]?(\d{3})[- ]?(\d{4})$/';
+            $rules['phone'] = 'bail|required|string';
 
             if (!empty($this->get('password'))) {
                 $rules['password'] = 'required|string|min:6|max:50';
@@ -86,7 +86,7 @@ class RegisterRequest extends FormRequest
             }
 
 
-            $rules['phone'] = 'bail|required|regex:/^\(?(\d{3})\)?[- ]?(\d{3})[- ]?(\d{4})$/';
+            $rules['phone'] = 'bail|required|string';
             $rules['payment_mode'] = 'bail|required|in:paypal,zelle,card|max:25';
             $rules['membership_category'] = 'bail|required|integer|exists:membership_categories,id';
 

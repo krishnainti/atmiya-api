@@ -264,7 +264,13 @@ class RegisterController extends BaseController
             $profile->status = 'payment_done';
             $profile->save();
             DB::commit();
-            return $this->sendResponse(['status' => true, 'payment' => $payment], 'Payment completed Successfully');
+
+            $registrationReader = new RegistrationReader();
+
+            $data = ['status' => true, 'payment' => $payment, 'user' => $registrationReader->getUser($profile->user_id) ];
+
+
+            return $this->sendResponse($data, 'Payment completed Successfully');
 
         } else if (isset($paypalResponse['error']) && ($paypalResponse['error']['message'])) {
             return $this->sendError('Payment.', ['response' => $paypalResponse, 'message' => $paypalResponse['error']['message']]);

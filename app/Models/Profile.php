@@ -11,6 +11,8 @@ class Profile extends Model
 {
     use HasFactory;
 
+    protected $with = ['payments'];
+
     /**
      * The attributes that are mass assignable.
      *
@@ -35,7 +37,7 @@ class Profile extends Model
 
     public function payments(): MorphMany
     {
-        return $this->morphMany(Payment::class, 'for');
+        return $this->morphMany(Payment::class, 'for')->orderBy("created_at","DESC");
     }
 
     public function user()
