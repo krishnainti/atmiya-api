@@ -138,10 +138,14 @@ class RegisterController extends BaseController
         if (array_key_exists('password', $validated_input)) {
             $validated_input['password'] = bcrypt($validated_input['password']);
         }
+
         $validated_input['name'] = $validated_input['first_name'] . " " . $validated_input['last_name'];
+        $validated_input['email'] = $validated_input['email'];
+
         User::find($user->id)->update($validated_input);
 
         Profile::find($user->profile->id)->update($validated_input);
+
         DB::commit();
 
         $registrationReader = new RegistrationReader();

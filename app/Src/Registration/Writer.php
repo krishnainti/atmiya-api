@@ -62,6 +62,8 @@ class Writer {
             'country' => $this->registrationData['country'],
             'membership_category' => $this->registrationData['membership_category'],
             'payment_mode' => $this->registrationData['payment_mode'],
+            'india_state' => $this->registrationData['india_state'],
+            'india_city' => $this->registrationData['india_city'],
             'status' => "pending"
         ];
 
@@ -153,6 +155,10 @@ class Writer {
         $this->profile->metro_area = $this->registrationData['metro_area'];
         $this->profile->zip_code = $this->registrationData['zip_code'];
         $this->profile->country = $this->registrationData['country'];
+
+        $this->profile->india_state = $this->registrationData['india_state'];
+        $this->profile->india_city = $this->registrationData['india_city'];
+
 
         // TODO: add condition same as controller
 

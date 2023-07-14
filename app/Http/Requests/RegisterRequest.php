@@ -58,6 +58,9 @@ class RegisterRequest extends FormRequest
              'zip_code' => 'bail|required|string|max:25',
              'country' => 'bail|required|string|max:25',
 
+             'india_state' => 'bail|required|string',
+             'india_city' => 'bail|required|string',
+
         ];
 
         if (Request::isMethod('patch')) {
