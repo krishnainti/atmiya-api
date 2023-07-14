@@ -50,7 +50,10 @@ Route::controller(ChapterStatesController::class)->group(function(){
     Route::get('/chapter-states', 'get');
 });
 
-
+Route::get('/run-migration', function() {
+    $output = [];
+    \Artisan::call('migrate', $output);
+});
 
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
