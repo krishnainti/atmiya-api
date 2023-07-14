@@ -55,6 +55,11 @@ Route::get('/run-migration', function() {
     \Artisan::call('migrate', $output);
 });
 
+Route::get('/run-db-seed', function() {
+    $output = [];
+    \Artisan::call('db:seed', $output);
+});
+
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });
