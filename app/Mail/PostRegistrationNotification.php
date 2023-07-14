@@ -30,7 +30,7 @@ class PostRegistrationNotification extends Mailable
 
     public function build()
     {
-        $name = $this->profile->first_name.' ' .$this->profile->first_name;
+        $name = $this->profile->first_name.' ' .$this->profile->last_name;
         $membership_category = $this->profile->membershipCategory->name;
         $payment_type = $this->profile->payment_mode;
         $zelle_payment_email= env('ZELLE_PAYMENT_EMAIL');
