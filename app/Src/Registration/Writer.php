@@ -209,10 +209,18 @@ class Writer {
 
     public function updateStatus($status) {
 
+        $paymentDetails = $this->profile->payments()->first();
+
+        if ($paymentDetails->payment_mode === "zelle") {
+            $paymentDetails->status = "completed";
+            $paymentDetails->save();
+        }
+
+
         $this->profile->status = $status;
 
         $this->profile->save();
-        // TODO: send EMAIL
+
         Mail::to($this->profile->user->email)->send(new ProfileStatusUpdateNotification($status, $this->profile));
         return;
     }
