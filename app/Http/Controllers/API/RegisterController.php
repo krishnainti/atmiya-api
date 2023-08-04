@@ -39,13 +39,9 @@ class RegisterController extends BaseController
                 $registrationWriter->updateUser();
                 $registrationWriter->updateProfile();
 
-                $completed_profile_payment = Payment::where([
-                    'for_type' => Profile::class,
-                    'for_id' => $registrationWriter->profile->id,
-                    'status' => 'completed',
-                ])->first();
+                $completed_profile_payment = $registrationWriter->profile && $registrationWriter->profile->payment && $registrationWriter->profile->payment->status == 'completed';
 
-                if (empty($completed_profile_payment)) {
+                if (!$completed_profile_payment) {
                     $paymentDetails = $registrationWriter->createPayment();
                 }
             } else {
@@ -162,7 +158,6 @@ class RegisterController extends BaseController
         if ($user->profile) {
             $user->profile->status = 'under_review';
             $user->profile->save();
-            // TODO: send EMAIL
             Mail::to($user->email)->send(new PostRegistrationNotification($user->profile));
         } else {
             return $this->sendError('Profile.', ['error' => 'Unauthorized']);
@@ -250,6 +245,7 @@ class RegisterController extends BaseController
     {
         $payment_id = $request->token;
         $payment = Payment::where('payment_id', $payment_id)->first();
+
         if ($payment_id == null || empty($payment)) {
             return $this->sendError('Payment.', ['error' => 'User payment details found.']);
         }
@@ -259,7 +255,6 @@ class RegisterController extends BaseController
         DB::beginTransaction();
 
         if (isset($paypalResponse['status']) && $paypalResponse['status'] == 'COMPLETED') {
-            $payment = Payment::where('payment_id', $payment->payment_id)->first();
             $payment->status = 'completed';
             $payment->meta = $paypalResponse;
             $payment->save();
@@ -287,19 +282,45 @@ class RegisterController extends BaseController
 
         $payment_id = $request->token;
         $payment = Payment::where('payment_id', $payment_id)->first();
+
         if ($payment_id == null || empty($payment)) {
             return $this->sendError('Payment.', ['error' => 'User payment details found.']);
         }
 
         DB::beginTransaction();
 
-        $payment = Payment::where('payment_id', $payment->payment_id)->first();
         $payment->status = 'canceled';
         $payment->save();
 
         DB::commit();
 
         return $this->sendResponse(['status' => true], 'Payment status updated');
+
+    }
+
+
+    public function cleanPayments(Request $request) {
+
+
+        $payments = Payment::all();
+
+        $payments->groupBy('for_id')->each(function($userPayments){
+
+            if ($userPayments->count() >= 1) {
+
+                $sortData = $userPayments->sortByDesc('created_at')->slice(1, $userPayments->count());
+
+                $sortData->each(function($payment, $key)  {
+                    if ($payment->status !== 'completed') {
+                        \Log::info('Deleted payment: - '.json_encode($payment->toArray()));
+
+                        $payment->delete();
+                    }
+                });
+            }
+        });
+
+        return $this->sendResponse(['status' => true], 'Duplicate payments removed');
 
     }
 

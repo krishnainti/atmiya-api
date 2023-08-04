@@ -73,6 +73,7 @@ class Writer {
     }
 
     public function createPayment() {
+
         $membershipCategory = $this->profile->membershipCategory;
         $redirect_url = null;
 
@@ -110,7 +111,19 @@ class Writer {
             ];
         }
 
-        $paymentData = Payment::create($paymentData);
+
+        if (empty($this->profile->payment)) {
+            $paymentData = Payment::create($paymentData);
+        } else {
+            foreach ($paymentData as $key => $value) {
+                $this->profile->payment->$key = $value;
+            }
+            $this->profile->payment->save();
+
+            $paymentData = Payment::find($this->profile->payment->id);
+        }
+
+
         $paymentData['redirect_url'] = $redirect_url;
 
         return $paymentData;
@@ -159,16 +172,9 @@ class Writer {
         $this->profile->india_state = $this->registrationData['india_state'];
         $this->profile->india_city = $this->registrationData['india_city'];
 
+        $completed_profile_payment = $this->profile && $this->profile->payment && $this->profile->payment->status == 'completed';
 
-        // TODO: add condition same as controller
-
-        $completed_profile_payment = Payment::where([
-            'for_type' => Profile::class,
-            'for_id' => $this->profile->id,
-            'status' => 'completed',
-        ])->first();
-
-        if (empty($completed_profile_payment)) {
+        if (!$completed_profile_payment) {
             $this->profile->membership_category = $this->registrationData['membership_category'];
             $this->profile->payment_mode = $this->registrationData['payment_mode'];
         }
@@ -179,7 +185,6 @@ class Writer {
 
     public function updatePayment() {
 
-        // Payment::whereIn('id', $this->profile->payments->pluck("id")->toArray())->update(["status" => "expired"]);
 
         $membershipCategory = $this->profile->membershipCategory;
 
@@ -209,7 +214,7 @@ class Writer {
 
     public function updateStatus($status) {
 
-        $paymentDetails = $this->profile->payments()->first();
+        $paymentDetails = $this->profile->payment;
 
         if ($paymentDetails->payment_mode === "zelle") {
             $paymentDetails->status = "completed";

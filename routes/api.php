@@ -28,6 +28,8 @@ Route::controller(RegisterController::class)->group(function(){
     Route::get('find-profile-by-email', 'findProfileByEmail');
     Route::get('capture-paypal-payment', 'captureRegistrationPaypalPaymentOrder');
     Route::get('cancel-paypal-payment', 'cancelPaypalPayment');
+
+    Route::get('/clean-payments', "cleanPayments");
 });
 
 Route::middleware('auth:sanctum')->controller(RegisterController::class)->group(function(){
@@ -59,6 +61,7 @@ Route::get('/run-db-seed', function() {
     $output = [];
     \Artisan::call('db:seed', $output);
 });
+
 
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();

@@ -4,14 +4,14 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\MorphMany;
+use Illuminate\Database\Eloquent\Relations\MorphOne;
 
 
 class Profile extends Model
 {
     use HasFactory;
 
-    protected $with = ['payments'];
+    protected $with = ['payment'];
 
     /**
      * The attributes that are mass assignable.
@@ -35,9 +35,9 @@ class Profile extends Model
         return $this->hasOne(MembershipCategory::class,'id','membership_category');
     }
 
-    public function payments(): MorphMany
+    public function payment(): MorphOne
     {
-        return $this->morphMany(Payment::class, 'for')->orderBy("created_at","DESC");
+        return $this->morphOne(Payment::class, 'for')->orderBy("created_at","DESC");
     }
 
     public function user()
