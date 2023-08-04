@@ -29,7 +29,7 @@ Route::controller(RegisterController::class)->group(function(){
     Route::get('capture-paypal-payment', 'captureRegistrationPaypalPaymentOrder');
     Route::get('cancel-paypal-payment', 'cancelPaypalPayment');
 
-    Route::get('/clean-payments', "cleanPayments");
+    // Route::get('/clean-payments', "cleanPayments");
 });
 
 Route::middleware('auth:sanctum')->controller(RegisterController::class)->group(function(){
@@ -38,6 +38,16 @@ Route::middleware('auth:sanctum')->controller(RegisterController::class)->group(
     Route::get('review-profiles', 'getReviewProfiles')->middleware(IsAdmin::class);
     Route::get('review-profiles/{userId}', 'getSingleReviewProfile')->middleware(IsAdmin::class);
     Route::put('review-profiles/{userId}/update-status', 'updateReviewProfileStatus')->middleware(IsAdmin::class);
+
+    Route::get('/run-migration', function() {
+        $output = [];
+        \Artisan::call('migrate', $output);
+    });
+
+    Route::get('/run-db-seed', function() {
+        $output = [];
+        \Artisan::call('db:seed', $output);
+    });
 });
 
 Route::controller(MembershipCategoriesController::class)->group(function(){
@@ -50,16 +60,6 @@ Route::controller(ChaptersController::class)->group(function(){
 
 Route::controller(ChapterStatesController::class)->group(function(){
     Route::get('/chapter-states', 'get');
-});
-
-Route::get('/run-migration', function() {
-    $output = [];
-    \Artisan::call('migrate', $output);
-});
-
-Route::get('/run-db-seed', function() {
-    $output = [];
-    \Artisan::call('db:seed', $output);
 });
 
 

@@ -301,6 +301,7 @@ class RegisterController extends BaseController
 
     public function cleanPayments(Request $request) {
 
+        dd("STOPPED");
 
         $payments = Payment::all();
 
